@@ -144,6 +144,18 @@ For each configured source: fetches the feed, applies `skipSources`, maps to
 Actual transactions, and calls `importTransactions`. Logs added/updated counts
 per source. **One source failing never aborts the others.**
 
+**Dry run** — preview without writing anything:
+
+```bash
+npm run import:dry
+# or: node index.mjs import --dry-run   (or set DRY_RUN=1)
+```
+
+Uses Actual's native `dryRun`: it downloads the budget and computes exactly what
+*would* be added/updated, but writes nothing. The log shows `would-add` /
+`would-update` plus the `skipped` and `belowFloor` counts — ideal for a first
+take-over run to confirm the start-date floor is set correctly before committing.
+
 ---
 
 ## Migrating from GoCardless (keeping the same accounts)

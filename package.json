@@ -9,6 +9,7 @@
   },
   "scripts": {
     "import": "node index.mjs import",
+    "import:dry": "node index.mjs import --dry-run",
     "discover": "node index.mjs discover",
     "list-accounts": "node index.mjs list-accounts"
   },

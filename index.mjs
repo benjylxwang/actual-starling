@@ -306,11 +306,14 @@ async function runListAccounts() {
   });
 }
 
-async function runImport() {
+async function runImport(dryRun) {
   const sources = loadSources();
   if (sources.length === 0) {
     console.log('No SOURCE_n_STARLING_TOKEN configured. Nothing to import.');
     return;
+  }
+  if (dryRun) {
+    console.log('DRY RUN — computing changes only, nothing will be written.');
   }
   const { minTs, maxTs } = windowTimestamps();
 
@@ -342,14 +345,19 @@ async function runImport() {
           belowFloor = before - txns.length;
         }
 
-        const result = await api.importTransactions(source.actualAccountId, txns);
+        const result = await api.importTransactions(source.actualAccountId, txns, {
+          defaultCleared: true,
+          dryRun: !!dryRun,
+        });
         const added = result.added?.length ?? 0;
         const updated = result.updated?.length ?? 0;
         const errors = result.errors?.length ?? 0;
+        const addLabel = dryRun ? 'would-add' : 'added';
+        const updLabel = dryRun ? 'would-update' : 'updated';
         console.log(
-          `[${source.name}] feed=${feed.length} skipped=${skipped} ` +
-            `belowFloor=${belowFloor} imported=${txns.length} ` +
-            `added=${added} updated=${updated} errors=${errors}`,
+          `[${source.name}]${dryRun ? ' (dry-run)' : ''} feed=${feed.length} ` +
+            `skipped=${skipped} belowFloor=${belowFloor} imported=${txns.length} ` +
+            `${addLabel}=${added} ${updLabel}=${updated} errors=${errors}`,
         );
         if (errors) console.log(`  errors:`, result.errors);
       } catch (err) {
@@ -361,9 +369,13 @@ async function runImport() {
 }
 
 // --- Entry point ----------------------------------------------------------
-const mode = process.argv[2] || 'import';
+const argv = process.argv.slice(2);
+const dryRun =
+  argv.includes('--dry-run') || /^(1|true|yes)$/i.test(process.env.DRY_RUN || '');
+const mode = argv.find((a) => !a.startsWith('-')) || 'import';
+
 const modes = {
-  import: runImport,
+  import: () => runImport(dryRun),
   discover: runDiscover,
   'list-accounts': runListAccounts,
 };
@@ -371,6 +383,7 @@ const modes = {
 const handler = modes[mode];
 if (!handler) {
   console.error(`Unknown mode "${mode}". Use: import | discover | list-accounts`);
+  console.error('Flags: --dry-run (import only)');
   process.exit(1);
 }
 
