@@ -142,7 +142,7 @@ async function resolveAccount(source) {
 
 // --- Mapping --------------------------------------------------------------
 // Starling minorUnits + direction -> Actual signed integer (OUT = negative).
-function feedItemToActual(item) {
+export function feedItemToActual(item) {
   const minor = item.amount?.minorUnits ?? 0;
   const signed = item.direction === 'OUT' ? -minor : minor;
   const when = item.settlementTime || item.transactionTime || item.updatedAt;
@@ -369,25 +369,32 @@ async function runImport(dryRun) {
 }
 
 // --- Entry point ----------------------------------------------------------
-const argv = process.argv.slice(2);
-const dryRun =
-  argv.includes('--dry-run') || /^(1|true|yes)$/i.test(process.env.DRY_RUN || '');
-const mode = argv.find((a) => !a.startsWith('-')) || 'import';
+// Only run the CLI when executed directly, so the module can be imported by
+// tests without kicking off a run.
+const isMain =
+  process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
-const modes = {
-  import: () => runImport(dryRun),
-  discover: runDiscover,
-  'list-accounts': runListAccounts,
-};
+if (isMain) {
+  const argv = process.argv.slice(2);
+  const dryRun =
+    argv.includes('--dry-run') || /^(1|true|yes)$/i.test(process.env.DRY_RUN || '');
+  const mode = argv.find((a) => !a.startsWith('-')) || 'import';
 
-const handler = modes[mode];
-if (!handler) {
-  console.error(`Unknown mode "${mode}". Use: import | discover | list-accounts`);
-  console.error('Flags: --dry-run (import only)');
-  process.exit(1);
+  const modes = {
+    import: () => runImport(dryRun),
+    discover: runDiscover,
+    'list-accounts': runListAccounts,
+  };
+
+  const handler = modes[mode];
+  if (!handler) {
+    console.error(`Unknown mode "${mode}". Use: import | discover | list-accounts`);
+    console.error('Flags: --dry-run (import only)');
+    process.exit(1);
+  }
+
+  handler().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 }
-
-handler().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});

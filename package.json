@@ -11,7 +11,8 @@
     "import": "node index.mjs import",
     "import:dry": "node index.mjs import --dry-run",
     "discover": "node index.mjs discover",
-    "list-accounts": "node index.mjs list-accounts"
+    "list-accounts": "node index.mjs list-accounts",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=18"

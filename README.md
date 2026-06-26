@@ -251,6 +251,15 @@ your `.env` there first.
 
 ---
 
+## Tests
+
+Pure-logic unit tests (amount sign, date selection, payee fallback, notes,
+cleared flag) run with no network or credentials:
+
+```bash
+npm test
+```
+
 ## Security
 
 - **Read-only scopes only.** Grant the token nothing beyond the read scopes
