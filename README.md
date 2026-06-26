@@ -198,6 +198,13 @@ while true; do
 done
 ```
 
+**Unraid** (User Scripts plugin): a ready-made script is in
+[`deploy/unraid-user-script.sh`](deploy/unraid-user-script.sh). It runs the
+importer inside an ephemeral `node` container (no node install on the host),
+installs deps on first run, and is meant to be pasted into a User Script set to
+"Scheduled Daily". Clone the repo to `/mnt/user/appdata/actual-starling` and put
+your `.env` there first.
+
 ---
 
 ## Security
