@@ -146,6 +146,38 @@ per source. **One source failing never aborts the others.**
 
 ---
 
+## Migrating from GoCardless (keeping the same accounts)
+
+If your Actual accounts already hold transactions from GoCardless (or any other
+bank-sync), read this before your first import — otherwise you will get
+duplicates.
+
+**Why duplicates happen:** Actual dedupes on `imported_id`. GoCardless and this
+tool use *different* `imported_id` namespaces (GoCardless's transaction id vs
+Starling's `feedItemUid`), so the same real transaction looks like two different
+ones. The overlapping window that both importers covered would be imported twice.
+
+**The fix — a clean handover boundary:**
+
+1. In Actual, **disconnect the GoCardless bank sync** on each Starling account
+   (account → settings → unlink). This stops GoCardless adding anything new and
+   makes Actual use strict id-checking on that account.
+2. Look at each account and note the **date of the last GoCardless transaction**.
+3. Set `SOURCE_n_START_DATE` to the **day after** that date (or simply the day
+   you unlink). Everything dated **before** the floor stays owned by GoCardless;
+   everything **on/after** is imported by this tool. No overlap, no duplicates.
+4. Run `npm run import`. The log shows `belowFloor=<n>` — those are the older
+   items the floor correctly dropped.
+
+The floor is permanent and harmless to leave in place. `LOOKBACK_DAYS` still
+controls the rolling window; the floor just guarantees the tool never reaches
+back into GoCardless's territory. (A global `IMPORT_START_DATE` sets one floor
+for all sources at once.)
+
+> Tip: pick the floor a day or two safely after the last GoCardless item to
+> avoid a same-day edge overlap. A handful of duplicates is easy to delete in
+> Actual if you misjudge it — there is no data loss either way.
+
 ## Scheduling
 
 Run `import` on whatever schedule you like. The rolling window + `imported_id`

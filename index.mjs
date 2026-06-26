@@ -63,6 +63,13 @@ function loadSources() {
       token,
       actualAccountId: process.env[`SOURCE_${i}_ACTUAL_ACCOUNT_ID`],
       accountUid: process.env[`SOURCE_${i}_ACCOUNT_UID`] || undefined,
+      // Hard floor (YYYY-MM-DD). Feed items dated before this are dropped —
+      // used when taking an account over from another importer (e.g. GoCardless)
+      // to avoid re-importing the overlap with a different imported_id namespace.
+      startDate:
+        process.env[`SOURCE_${i}_START_DATE`] ||
+        process.env.IMPORT_START_DATE ||
+        undefined,
       // Default: drop internal pot/space movements so they aren't double-counted.
       skipSources:
         skipRaw !== undefined
@@ -325,7 +332,15 @@ async function runImport() {
         const skip = new Set(source.skipSources);
         const kept = feed.filter((item) => !skip.has(item.source));
         const skipped = feed.length - kept.length;
-        const txns = kept.map(feedItemToActual).filter((t) => t.date && t.imported_id);
+        let txns = kept.map(feedItemToActual).filter((t) => t.date && t.imported_id);
+
+        // Apply the start-date floor (drop anything older — handover boundary).
+        let belowFloor = 0;
+        if (source.startDate) {
+          const before = txns.length;
+          txns = txns.filter((t) => t.date >= source.startDate);
+          belowFloor = before - txns.length;
+        }
 
         const result = await api.importTransactions(source.actualAccountId, txns);
         const added = result.added?.length ?? 0;
@@ -333,7 +348,8 @@ async function runImport() {
         const errors = result.errors?.length ?? 0;
         console.log(
           `[${source.name}] feed=${feed.length} skipped=${skipped} ` +
-            `imported=${txns.length} added=${added} updated=${updated} errors=${errors}`,
+            `belowFloor=${belowFloor} imported=${txns.length} ` +
+            `added=${added} updated=${updated} errors=${errors}`,
         );
         if (errors) console.log(`  errors:`, result.errors);
       } catch (err) {
