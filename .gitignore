@@ -1,0 +1,11 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Actual local budget cache
+.actual-cache/
+
+# Node
+node_modules/
+npm-debug.log*

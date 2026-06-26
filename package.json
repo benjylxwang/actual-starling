@@ -1,0 +1,23 @@
+{
+  "name": "actual-starling",
+  "version": "1.0.0",
+  "description": "Unofficial importer for Starling Bank transactions into Actual Budget via a personal access token. Aggregator-free.",
+  "type": "module",
+  "main": "index.mjs",
+  "bin": {
+    "actual-starling": "index.mjs"
+  },
+  "scripts": {
+    "import": "node index.mjs import",
+    "discover": "node index.mjs discover",
+    "list-accounts": "node index.mjs list-accounts"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "author": "benjylxwang",
+  "dependencies": {
+    "@actual-app/api": "^26.6.0"
+  }
+}
